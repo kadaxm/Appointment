@@ -1,0 +1,86 @@
+{
+  "name": "TG 2",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "emailAddress"
+            },
+            {
+              "name": "subject"
+            },
+            {
+              "name": "emailBody"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "077041a9-d5fe-45fb-9538-0a9eaa79c24a",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.emailAddress }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.emailBody }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0269fd5b-3c7a-4066-9e30-a59f5b5878a8",
+      "name": "Send a message",
+      "webhookId": "163875a4-55ac-4c2d-81bd-6dc6455d1bdf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "E3iIYtWCD84O4pTr",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c7168d4a-c475-4692-a6fd-c9a0ebf4dedf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "91b173a40973459d5ba8bbac0a18d4f9c8c75c42ff6dfa0f1e7d717797fb7c0b"
+  },
+  "id": "T5YMs6KtePazcPTl",
+  "tags": []
+}
