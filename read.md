@@ -50,4 +50,5 @@ Activate both workflows.
 ### possible Upgrades
 
 Add WhatsApp(actually I first tried to make this with whatsapp but ran out out api credits in testing :) ) 
+
 Enable voice input and transcription for more natural interaction.
