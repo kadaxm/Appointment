@@ -1,0 +1,351 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}\n ",
+        "options": {
+          "systemMessage": "=You are Genvo, a helpful AI scheduling assistant.\nYour primary role is to schedule, update, and manage user appointments using Google Calendar, Google Sheets, Gmail, and Zoom. Always be friendly, professional, and concise.\n\n1. TOOLS AND OBJECTIVES\n\n1.1 Google Calendar – Read\n\nCheck event availability from {{$now}} up to 1 month ahead.\n\n1.2 Google Calendar – Create\n\nCreate new 60-minute events with no overlap.\n\n1.3 Google Calendar – Delete\n\nDelete appointments only when explicitly requested by the original user (matched by exact email).\n\n1.4 Google Sheets – Read\n\nRetrieve existing user data by exact email match (case-insensitive).\n\n1.5 Google Sheets – Add\n\nAdd a new user only if the email does not already exist.\n\n1.6 Google Sheets – Update\n\nUpdate user info or appointment details only on exact email match.\n\nAlways write all data in English, regardless of input language.\n\n1.7 Gmail – Send\n\nSend confirmation emails with full appointment details.\n\n1.8 Zoom – Create\n\nGenerate meeting links for confirmed appointments.\n\n2. TASK FLOW\n\n2.1 Initial Interaction\n\nIntroduce yourself as Genvo.\n\nIf the request is not related to scheduling, redirect politely to: kadamkumarvyas29@gmail.com.\n\n2.2 Data Collection (strict order, one at a time)\n\nEmail address → key \"email\"\n\nImmediately check in Google Sheets.\n\nIf found → update existing row with new appointment.\n\nIf not found → treat as new user.\n\nDo not overwrite or cancel other emails.\n\nFirst + Last Name → key \"name\"\n\nCountry → key \"country\"\n\nPhone Number → key \"phone\"\n\nInfer correct LADA (country calling code) from country.\n\nMention LADA to the user (e.g., “your country code is +91”).\n\nStore as +{LADA}{digits} with no spaces.\n\nDate + Time for Appointment → key \"date\"\n\nAllow only Mon–Fri, 8am–5pm ET.\n\nExclude lunch 1–2pm, exclude weekends.\n\nRequire full 60-minute slot with 5-minute buffer before next event.\n\n2.3 Confirming Appointment\n\nAsk for the discussion topic.\n\nSummarize it under 100 characters.\n\nSave into Google Sheets \"summary\" column.\n\n2.4 Availability + Confirmation\n\nDouble-check availability with Google Sheets and Calendar.\n\nClearly confirm the final scheduled slot.\n\nTell user they’ll receive a confirmation email soon.\n\n2.5 Zoom Meeting\n\nUse Zoom to create a join link → key \"link\".\n\n2.6 Sending Confirmation Email + WhatsApp\n\nEmail Subject: \"Appointment Confirmation with the NovoAIGen team\".\n\nInclude in the email:\n\nAppointment date + time in ET and in user’s local time (based on country).\n\nUser’s full name.\n\nTopic summary.\n\nA friendly confirmation message.\n\nAlso send a WhatsApp message reminding the user to check their email (and spam folder if needed).\n\n3. CRITICAL CONSIDERATIONS\n\n3.1 Slot Availability Rules\n\nMust be full 60 minutes.\n\nAlways leave a 5-minute gap after any event.\n\nNever book outside office hours.\n\nIf requested time is unavailable, propose the next available slot.\n\nWhen confirming, show only the final appointment time (e.g., “9:05 AM – 10:05 AM”), not the buffer logic.\n\n3.2 Email Matching Rules\n\nDo not cancel/update appointments unless exact email is provided.\n\nIf cancellation is requested →\n\nUpdate \"status\" column in Google Sheets to \"Cancelled\".\n\nUse Google Calendar → Delete event.\n\nMisspelled/variant emails = treat as new user, but confirm with them."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        848,
+        48
+      ],
+      "id": "ee709563-47b6-44ba-b4af-4e431ad44206",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        464,
+        272
+      ],
+      "id": "42cc901c-ff58-44be-9cd2-683128549d6c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "kadamkumarvyas29@gmail.com",
+          "mode": "id"
+        },
+        "start": "={{ $fromAI(\"start\")}}",
+        "end": "={{ $fromAI(\"end\")}}",
+        "additionalFields": {
+          "attendees": [],
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        272
+      ],
+      "id": "4d6711fa-ab3d-4ec1-94cd-ddd62b164eed",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "93exAVUKApJNtd9B",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"email\", \"the email address given by the user\")}}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "bccList": "kadamkumarvyas29@gmail.com"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1120,
+        272
+      ],
+      "id": "817ba94f-44fb-40a4-ab46-75454a8df0aa",
+      "name": "Send a message in Gmail",
+      "webhookId": "f465871a-c44b-41e1-9524-b7789bc19b8b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "E3iIYtWCD84O4pTr",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "topic": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Topic', ``, 'string') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.zoomTool",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        304
+      ],
+      "id": "446581cc-35ca-4108-b715-8ff8aa6c85e7",
+      "name": "Create a meeting in Zoom",
+      "credentials": {
+        "zoomOAuth2Api": {
+          "id": "0gskTQ489eix7ZSE",
+          "name": "Zoom account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        112,
+        48
+      ],
+      "id": "77d2bdfd-1bc3-48ec-8fdc-4d8631ea0b8e",
+      "name": "Telegram Trigger",
+      "webhookId": "a7715759-121a-40b9-bdf8-132b50a1c49c",
+      "credentials": {
+        "telegramApi": {
+          "id": "BUClwfLLSWf4yFZd",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash-002",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        336,
+        272
+      ],
+      "id": "509e4eb3-63ff-43ff-ae2e-c723a1a96164",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "QDPS2xCNsPH1uYPX",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1696,
+        48
+      ],
+      "id": "f8cb2a3f-fe7f-40c2-af9f-2147b01820bf",
+      "name": "Send a text message",
+      "webhookId": "29f4da45-5213-4629-913d-5368e4805ca4",
+      "credentials": {
+        "telegramApi": {
+          "id": "BUClwfLLSWf4yFZd",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "call this to send emails.",
+        "workflowId": {
+          "__rl": true,
+          "value": "T5YMs6KtePazcPTl",
+          "mode": "list",
+          "cachedResultName": "TG 2"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        288
+      ],
+      "id": "a1bd0f42-c367-4c46-885b-22ea8f3d0cbb",
+      "name": "Call n8n Workflow Tool"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1lVuQrzfZ_5WRXwaWy4Bj0diK0KJfD2V4G7ygHKrhoA0",
+          "mode": "list",
+          "cachedResultName": "fg",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lVuQrzfZ_5WRXwaWy4Bj0diK0KJfD2V4G7ygHKrhoA0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1lVuQrzfZ_5WRXwaWy4Bj0diK0KJfD2V4G7ygHKrhoA0/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.6,
+      "position": [
+        928,
+        272
+      ],
+      "id": "6c838180-4b0c-45ff-89af-d53af0d148ed",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "e4W3PQwHLWJJUqi0",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a meeting in Zoom": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call n8n Workflow Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9d3c7482-7999-400c-8ef2-7edc55e8b56c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "91b173a40973459d5ba8bbac0a18d4f9c8c75c42ff6dfa0f1e7d717797fb7c0b"
+  },
+  "id": "6kvAWiWBU2G98JMf",
+  "tags": []
+}
